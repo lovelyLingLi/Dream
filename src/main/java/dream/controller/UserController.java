@@ -128,7 +128,7 @@ public class UserController {
     }
     
     /**
-     * 修改密码接口
+     * 修改密码接口1
      * PUT /api/users/{id}/password
      * @param id 用户ID
      * @param passwordRequest 密码修改请求
