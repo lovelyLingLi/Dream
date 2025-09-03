@@ -23,7 +23,7 @@ public class User {
      * 用户ID - 主键，自增
      */
     @TableId(value = "user_id", type = IdType.AUTO)
-    private Long userId;
+    private Long id;
     
     /**
      * 用户名 - 用于登录，唯一

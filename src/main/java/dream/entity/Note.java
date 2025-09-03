@@ -30,7 +30,7 @@ public class Note implements Serializable {
      * 笔记ID，主键自增
      */
     @TableId(value = "note_id", type = IdType.AUTO)
-    private Long noteId;
+    private Long id;
 
     /**
      * 笔记标题

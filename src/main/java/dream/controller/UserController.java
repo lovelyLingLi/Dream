@@ -1,14 +1,12 @@
 package dream.controller;
 
+import dream.common.Result;
 import dream.entity.User;
 import dream.service.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,62 +31,30 @@ public class UserController {
      * @return 注册结果
      */
     @PostMapping("/register")
-    public ResponseEntity<Map<String, Object>> register(@Valid @RequestBody User user) {
-        Map<String, Object> response = new HashMap<>();
+    public Result<User> register(@Valid @RequestBody User user) {
+        User registeredUser = userService.registerUser(user);
+        // 不返回密码信息
+        registeredUser.setPasswordHash(null);
         
-        try {
-            User registeredUser = userService.registerUser(user);
-            // 不返回密码信息
-            registeredUser.setPasswordHash(null);
-            
-            response.put("success", true);
-            response.put("message", "注册成功");
-            response.put("data", registeredUser);
-            
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            
-            return ResponseEntity.badRequest().body(response);
-        }
+        return Result.success("注册成功", registeredUser);
     }
     
     /**
      * 用户登录接口
      * POST /api/users/login
-     * @param loginRequest 登录请求（包含用户名/邮箱和密码）
+     * @param loginRequest 登录请求（包含用户名和密码）
      * @return 登录结果
      */
     @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> loginRequest) {
-        Map<String, Object> response = new HashMap<>();
+    public Result<User> login(@Valid @RequestBody Map<String, String> loginRequest) {
+        String username = loginRequest.get("username");
+        String password = loginRequest.get("password");
         
-        try {
-            String usernameOrEmail = loginRequest.get("usernameOrEmail");
-            String password = loginRequest.get("password");
-            
-            if (usernameOrEmail == null || password == null) {
-                response.put("success", false);
-                response.put("message", "用户名/邮箱和密码不能为空");
-                return ResponseEntity.badRequest().body(response);
-            }
-            
-            User user = userService.loginUser(usernameOrEmail, password);
-            // 不返回密码信息
-            user.setPasswordHash(null);
-            
-            response.put("success", true);
-            response.put("message", "登录成功");
-            response.put("data", user);
-            
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            
-            return ResponseEntity.badRequest().body(response);
-        }
+        User user = userService.loginUser(username, password);
+        // 不返回密码信息
+        user.setPasswordHash(null);
+        
+        return Result.success("登录成功", user);
     }
     
     /**
@@ -98,30 +64,16 @@ public class UserController {
      * @return 用户信息
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> getUserById(@PathVariable Long id) {
-        Map<String, Object> response = new HashMap<>();
-        
-        try {
-            User user = userService.getById(id);
-            if (user == null) {
-                response.put("success", false);
-                response.put("message", "用户不存在");
-                return ResponseEntity.notFound().build();
-            }
-            
-            // 不返回密码信息
-            user.setPasswordHash(null);
-            
-            response.put("success", true);
-            response.put("data", user);
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "获取用户信息失败");
-            
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    public Result<User> getUserById(@PathVariable Long id) {
+        User user = userService.getById(id);
+        if (user == null) {
+            return Result.error("U001", "用户不存在");
         }
+        
+        // 不返回密码信息
+        user.setPasswordHash(null);
+        
+        return Result.success(user);
     }
     
     /**
@@ -131,31 +83,17 @@ public class UserController {
      * @return 用户信息
      */
     @GetMapping("/username/{username}")
-    public ResponseEntity<Map<String, Object>> getUserByUsername(@PathVariable String username) {
-        Map<String, Object> response = new HashMap<>();
-        
-        try {
-            Optional<User> userOpt = userService.findByUsername(username);
-            if (!userOpt.isPresent()) {
-                response.put("success", false);
-                response.put("message", "用户不存在");
-                return ResponseEntity.notFound().build();
-            }
-            
-            User user = userOpt.get();
-            // 不返回密码信息
-            user.setPasswordHash(null);
-            
-            response.put("success", true);
-            response.put("data", user);
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "获取用户信息失败");
-            
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    public Result<User> getUserByUsername(@PathVariable String username) {
+        Optional<User> userOpt = userService.findByUsername(username);
+        if (!userOpt.isPresent()) {
+            return Result.error("U001", "用户不存在");
         }
+        
+        User user = userOpt.get();
+        // 不返回密码信息
+        user.setPasswordHash(null);
+        
+        return Result.success(user);
     }
     
     /**
@@ -164,24 +102,12 @@ public class UserController {
      * @return 激活用户列表
      */
     @GetMapping("/active")
-    public ResponseEntity<Map<String, Object>> getActiveUsers() {
-        Map<String, Object> response = new HashMap<>();
+    public Result<List<User>> getActiveUsers() {
+        List<User> users = userService.getActiveUsers();
+        // 不返回密码信息
+        users.forEach(user -> user.setPasswordHash(null));
         
-        try {
-            List<User> users = userService.getActiveUsers();
-            // 不返回密码信息
-            users.forEach(user -> user.setPasswordHash(null));
-            
-            response.put("success", true);
-            response.put("data", users);
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "获取用户列表失败");
-            
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
+        return Result.success(users);
     }
     
     /**
@@ -192,25 +118,13 @@ public class UserController {
      * @return 更新结果
      */
     @PutMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> updateUser(@PathVariable Long id, @RequestBody User user) {
-        Map<String, Object> response = new HashMap<>();
+    public Result<User> updateUser(@PathVariable Long id, @Valid @RequestBody User user) {
+        user.setId(id); // 确保ID一致
+        User updatedUser = userService.updateUserInfo(id, user);
+        // 不返回密码信息
+        updatedUser.setPasswordHash(null);
         
-        try {
-            User updatedUser = userService.updateUserInfo(id, user);
-            // 不返回密码信息
-            updatedUser.setPasswordHash(null);
-            
-            response.put("success", true);
-            response.put("message", "用户信息更新成功");
-            response.put("data", updatedUser);
-            
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            
-            return ResponseEntity.badRequest().body(response);
-        }
+        return Result.success("用户信息更新成功", updatedUser);
     }
     
     /**
@@ -221,33 +135,13 @@ public class UserController {
      * @return 修改结果
      */
     @PutMapping("/{id}/password")
-    public ResponseEntity<Map<String, Object>> changePassword(
-            @PathVariable Long id, 
-            @RequestBody Map<String, String> passwordRequest) {
-        Map<String, Object> response = new HashMap<>();
+    public Result<String> changePassword(@PathVariable Long id, @RequestBody Map<String, String> passwordRequest) {
+        String oldPassword = passwordRequest.get("oldPassword");
+        String newPassword = passwordRequest.get("newPassword");
         
-        try {
-            String oldPassword = passwordRequest.get("oldPassword");
-            String newPassword = passwordRequest.get("newPassword");
-            
-            if (oldPassword == null || newPassword == null) {
-                response.put("success", false);
-                response.put("message", "旧密码和新密码不能为空");
-                return ResponseEntity.badRequest().body(response);
-            }
-            
-            userService.changePassword(id, oldPassword, newPassword);
-            
-            response.put("success", true);
-            response.put("message", "密码修改成功");
-            
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            
-            return ResponseEntity.badRequest().body(response);
-        }
+        userService.changePassword(id, oldPassword, newPassword);
+        
+        return Result.success("密码修改成功");
     }
     
     /**
@@ -257,23 +151,11 @@ public class UserController {
      * @return 可用性检查结果
      */
     @GetMapping("/check/username/{username}")
-    public ResponseEntity<Map<String, Object>> checkUsernameAvailability(@PathVariable String username) {
-        Map<String, Object> response = new HashMap<>();
+    public Result<Boolean> checkUsernameAvailability(@PathVariable String username) {
+        boolean available = userService.isUsernameAvailable(username);
+        String message = available ? "用户名可用" : "用户名已存在";
         
-        try {
-            boolean available = userService.isUsernameAvailable(username);
-            
-            response.put("success", true);
-            response.put("available", available);
-            response.put("message", available ? "用户名可用" : "用户名已存在");
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "检查用户名失败");
-            
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
+        return Result.success(message, available);
     }
     
     /**
@@ -283,23 +165,11 @@ public class UserController {
      * @return 可用性检查结果
      */
     @GetMapping("/check/email/{email}")
-    public ResponseEntity<Map<String, Object>> checkEmailAvailability(@PathVariable String email) {
-        Map<String, Object> response = new HashMap<>();
+    public Result<Boolean> checkEmailAvailability(@PathVariable String email) {
+        boolean available = userService.isEmailAvailable(email);
+        String message = available ? "邮箱可用" : "邮箱已存在";
         
-        try {
-            boolean available = userService.isEmailAvailable(email);
-            
-            response.put("success", true);
-            response.put("available", available);
-            response.put("message", available ? "邮箱可用" : "邮箱已存在");
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "检查邮箱失败");
-            
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
+        return Result.success(message, available);
     }
     
     /**
@@ -309,22 +179,10 @@ public class UserController {
      * @return 操作结果
      */
     @PostMapping("/{id}/view")
-    public ResponseEntity<Map<String, Object>> incrementViewCount(@PathVariable Long id) {
-        Map<String, Object> response = new HashMap<>();
+    public Result<String> incrementViewCount(@PathVariable Long id) {
+        userService.incrementViewCount(id);
         
-        try {
-            userService.incrementViewCount(id);
-            
-            response.put("success", true);
-            response.put("message", "访问量增加成功");
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "访问量增加失败");
-            
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
+        return Result.success("访问量增加成功");
     }
     
     /**
@@ -334,22 +192,10 @@ public class UserController {
      * @return 操作结果
      */
     @PostMapping("/{id}/like")
-    public ResponseEntity<Map<String, Object>> incrementLikeCount(@PathVariable Long id) {
-        Map<String, Object> response = new HashMap<>();
+    public Result<String> incrementLikeCount(@PathVariable Long id) {
+        userService.incrementLikeCount(id);
         
-        try {
-            userService.incrementLikeCount(id);
-            
-            response.put("success", true);
-            response.put("message", "点赞成功");
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "点赞失败");
-            
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
+        return Result.success("点赞成功");
     }
     
     /**
@@ -359,21 +205,35 @@ public class UserController {
      * @return 操作结果
      */
     @DeleteMapping("/{id}/like")
-    public ResponseEntity<Map<String, Object>> decrementLikeCount(@PathVariable Long id) {
-        Map<String, Object> response = new HashMap<>();
+    public Result<String> decrementLikeCount(@PathVariable Long id) {
+        userService.decrementLikeCount(id);
         
-        try {
-            userService.decrementLikeCount(id);
-            
-            response.put("success", true);
-            response.put("message", "取消点赞成功");
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "取消点赞失败");
-            
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
+        return Result.success("取消点赞成功");
+    }
+    
+    /**
+     * 停用用户接口
+     * PUT /api/users/{id}/deactivate
+     * @param id 用户ID
+     * @return 停用结果
+     */
+    @PutMapping("/{id}/deactivate")
+    public Result<String> deactivateUser(@PathVariable Long id) {
+        userService.deactivateUser(id);
+        
+        return Result.success("用户已停用");
+    }
+    
+    /**
+     * 激活用户接口
+     * PUT /api/users/{id}/activate
+     * @param id 用户ID
+     * @return 激活结果
+     */
+    @PutMapping("/{id}/activate")
+    public Result<String> activateUser(@PathVariable Long id) {
+        userService.activateUser(id);
+        
+        return Result.success("用户已激活");
     }
 }

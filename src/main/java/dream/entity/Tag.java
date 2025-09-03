@@ -30,7 +30,7 @@ public class Tag implements Serializable {
      * 标签ID，主键自增
      */
     @TableId(value = "tag_id", type = IdType.AUTO)
-    private Long tagId;
+    private Long id;
 
     /**
      * 标签名称，唯一

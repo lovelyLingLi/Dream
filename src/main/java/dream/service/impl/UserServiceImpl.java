@@ -2,6 +2,7 @@ package dream.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import dream.entity.User;
+import dream.exception.business.UserException;
 import dream.mapper.UserMapper;
 import dream.service.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,17 +37,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * 用户注册
      * @param user 用户信息
      * @return 注册结果
-     * @throws RuntimeException 当用户名或邮箱已存在时抛出异常
+     * @throws UserException 当用户名或邮箱已存在时抛出异常
      */
     public User registerUser(User user) {
         // 检查用户名是否已存在
         if (userMapper.existsByUsername(user.getUsername())) {
-            throw new RuntimeException("用户名已存在");
+            throw UserException.usernameExists();
         }
         
         // 检查邮箱是否已存在
         if (userMapper.existsByEmail(user.getEmail())) {
-            throw new RuntimeException("邮箱已存在");
+            throw UserException.emailExists();
         }
         
         // 加密密码
@@ -71,26 +72,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @param usernameOrEmail 用户名或邮箱
      * @param password 原始密码
      * @return 用户信息（如果验证成功）
-     * @throws RuntimeException 当用户不存在或密码错误时抛出异常
+     * @throws UserException 当用户不存在或密码错误时抛出异常
      */
     public User loginUser(String usernameOrEmail, String password) {
         // 查找用户（通过用户名或邮箱）
         Optional<User> userOpt = userMapper.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail);
         
         if (!userOpt.isPresent()) {
-            throw new RuntimeException("用户不存在");
+            throw UserException.userNotFound();
         }
         
         User user = userOpt.get();
         
-        // 检查账户是否激活
+        // 检查用户是否被禁用
         if (!user.getIsActive()) {
-            throw new RuntimeException("账户已被禁用");
+            throw UserException.userDisabled();
         }
         
         // 验证密码
         if (!passwordEncoder.matches(password, user.getPasswordHash())) {
-            throw new RuntimeException("密码错误");
+            throw UserException.passwordError();
         }
         
         return user;
@@ -119,12 +120,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @param userId 用户ID
      * @param user 更新的用户信息
      * @return 更新后的用户信息
-     * @throws RuntimeException 当用户不存在时抛出异常
+     * @throws UserException 当用户不存在时抛出异常
      */
     public User updateUserInfo(Long userId, User user) {
         User existingUser = userMapper.selectById(userId);
         if (existingUser == null) {
-            throw new RuntimeException("用户不存在");
+            throw UserException.userNotFound();
         }
         
         // 更新允许修改的字段
@@ -156,17 +157,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @param userId 用户ID
      * @param oldPassword 旧密码
      * @param newPassword 新密码
-     * @throws RuntimeException 当用户不存在或旧密码错误时抛出异常
+     * @throws UserException 当用户不存在或旧密码错误时抛出异常
      */
     public void changePassword(Long userId, String oldPassword, String newPassword) {
         User user = userMapper.selectById(userId);
         if (user == null) {
-            throw new RuntimeException("用户不存在");
+            throw UserException.userNotFound();
         }
         
         // 验证旧密码
         if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
-            throw new RuntimeException("旧密码错误");
+            throw UserException.passwordError();
         }
         
         // 更新密码
@@ -185,12 +186,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     /**
      * 禁用用户账户
      * @param userId 用户ID
-     * @throws RuntimeException 当用户不存在时抛出异常
+     * @throws UserException 当用户不存在时抛出异常
      */
     public void deactivateUser(Long userId) {
         User user = userMapper.selectById(userId);
         if (user == null) {
-            throw new RuntimeException("用户不存在");
+            throw UserException.userNotFound();
         }
         
         user.setIsActive(false);
@@ -200,12 +201,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     /**
      * 激活用户账户
      * @param userId 用户ID
-     * @throws RuntimeException 当用户不存在时抛出异常
+     * @throws UserException 当用户不存在时抛出异常
      */
     public void activateUser(Long userId) {
         User user = userMapper.selectById(userId);
         if (user == null) {
-            throw new RuntimeException("用户不存在");
+            throw UserException.userNotFound();
         }
         
         user.setIsActive(true);

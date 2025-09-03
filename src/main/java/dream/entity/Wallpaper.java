@@ -30,7 +30,7 @@ public class Wallpaper implements Serializable {
      * 壁纸ID，主键自增
      */
     @TableId(value = "wallpaper_id", type = IdType.AUTO)
-    private Long wallpaperId;
+    private Long id;
 
     /**
      * 壁纸标题

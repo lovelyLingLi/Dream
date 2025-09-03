@@ -22,7 +22,7 @@ public interface IUserService extends IService<User> {
      * 用户注册
      * @param user 用户信息
      * @return 注册结果
-     * @throws RuntimeException 当用户名或邮箱已存在时抛出异常
+     * @throws UserException 当用户名或邮箱已存在时抛出异常
      */
     User registerUser(User user);
     
@@ -31,7 +31,7 @@ public interface IUserService extends IService<User> {
      * @param usernameOrEmail 用户名或邮箱
      * @param password 原始密码
      * @return 用户信息（如果验证成功）
-     * @throws RuntimeException 当用户不存在或密码错误时抛出异常
+     * @throws UserException 当用户不存在或密码错误时抛出异常
      */
     User loginUser(String usernameOrEmail, String password);
     
@@ -54,7 +54,7 @@ public interface IUserService extends IService<User> {
      * @param userId 用户ID
      * @param user 更新的用户信息
      * @return 更新后的用户信息
-     * @throws RuntimeException 当用户不存在时抛出异常
+     * @throws UserException 当用户不存在时抛出异常
      */
     User updateUserInfo(Long userId, User user);
     
@@ -63,7 +63,7 @@ public interface IUserService extends IService<User> {
      * @param userId 用户ID
      * @param oldPassword 旧密码
      * @param newPassword 新密码
-     * @throws RuntimeException 当用户不存在或旧密码错误时抛出异常
+     * @throws UserException 当用户不存在或旧密码错误时抛出异常
      */
     void changePassword(Long userId, String oldPassword, String newPassword);
     
@@ -76,14 +76,14 @@ public interface IUserService extends IService<User> {
     /**
      * 禁用用户账户
      * @param userId 用户ID
-     * @throws RuntimeException 当用户不存在时抛出异常
+     * @throws UserException 当用户不存在时抛出异常
      */
     void deactivateUser(Long userId);
     
     /**
      * 激活用户账户
      * @param userId 用户ID
-     * @throws RuntimeException 当用户不存在时抛出异常
+     * @throws UserException 当用户不存在时抛出异常
      */
     void activateUser(Long userId);
     
