@@ -1,0 +1,16 @@
+/* 自定义代码块样式 */
+pre[class*="language-"] {
+    border-radius: 0.75rem;
+    padding: 1.5rem !important;
+    margin: 1.5rem 0;
+}
+
+code[class*="language-"] {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.9rem;
+    text-shadow: none !important;
+}
+
+.token.comment {
+    color: #6c7986 !important;
+}
